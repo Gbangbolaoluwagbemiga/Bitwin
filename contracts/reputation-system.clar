@@ -98,7 +98,7 @@
         successful-repayments: u0,
         defaults: u0,
         total-volume: u0,
-        last-updated: block-height
+        last-updated: stacks-block-height
       }
     )
     (ok true)
@@ -118,13 +118,13 @@
       (merge reputation {
         total-loans: new-total-loans,
         total-volume: new-total-volume,
-        last-updated: block-height
+        last-updated: stacks-block-height
       })
     )
     
     ;; Record history
     (map-set reputation-history
-      { user: user, timestamp: block-height }
+      { user: user, timestamp: stacks-block-height }
       {
         score: (get score reputation),
         event-type: "new-loan",
@@ -153,13 +153,13 @@
       (merge reputation {
         score: new-score,
         successful-repayments: new-repayments,
-        last-updated: block-height
+        last-updated: stacks-block-height
       })
     )
     
     ;; Record history
     (map-set reputation-history
-      { user: user, timestamp: block-height }
+      { user: user, timestamp: stacks-block-height }
       {
         score: new-score,
         event-type: "repayment",
@@ -189,13 +189,13 @@
       (merge reputation {
         score: new-score,
         defaults: new-defaults,
-        last-updated: block-height
+        last-updated: stacks-block-height
       })
     )
     
     ;; Record history
     (map-set reputation-history
-      { user: user, timestamp: block-height }
+      { user: user, timestamp: stacks-block-height }
       {
         score: new-score,
         event-type: "default",
@@ -248,7 +248,7 @@
           { user: user }
           (merge reputation {
             score: final-score,
-            last-updated: block-height
+            last-updated: stacks-block-height
           })
         )
         (ok final-score)
