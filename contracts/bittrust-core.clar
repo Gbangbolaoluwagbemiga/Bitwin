@@ -15,7 +15,6 @@
 
 ;; Data Variables
 (define-data-var loan-nonce uint u0)
-(define-data-var platform-fee-rate uint u250) ;; 2.5% in basis points
 
 ;; Data Maps
 (define-map loans
@@ -25,13 +24,13 @@
     lender: principal,
     amount: uint,
     collateral: uint,
-    interest-rate: uint, ;; Annual rate in basis points (e.g., 1000 = 10%)
-    duration: uint, ;; In blocks
+    interest-rate: uint,
+    duration: uint,
     start-block: uint,
     due-block: uint,
     repaid-amount: uint,
-    status: (string-ascii 20), ;; "active", "repaid", "defaulted", "liquidated"
-    collateral-ratio: uint ;; Percentage (e.g., 150 = 150%)
+    status: (string-ascii 20),
+    collateral-ratio: uint
   }
 )
 
@@ -47,20 +46,10 @@
   }
 )
 
-(define-map loan-offers
-  { offer-id: uint }
-  {
-    lender: principal,
-    amount: uint,
-    interest-rate: uint,
-    duration: uint,
-    min-collateral-ratio: uint,
-    min-reputation: uint,
-    active: bool
-  }
+(define-map collateral-vault
+  { loan-id: uint }
+  { amount: uint }
 )
-
-(define-data-var offer-nonce uint u0)
 
 ;; Read-only functions
 (define-read-only (get-loan (loan-id uint))
@@ -75,17 +64,12 @@
   )
 )
 
-(define-read-only (get-loan-offer (offer-id uint))
-  (map-get? loan-offers { offer-id: offer-id })
-)
-
 (define-read-only (calculate-repayment-amount (loan-id uint))
   (let
     (
-      (loan (unwrap! (get-loan loan-id) (err err-not-found)))
+      (loan (unwrap! (get-loan loan-id) err-not-found))
       (principal-amount (get amount loan))
       (interest-rate (get interest-rate loan))
-      (duration (get duration loan))
     )
     (ok (+ principal-amount (/ (* principal-amount interest-rate) u10000)))
   )
@@ -94,7 +78,7 @@
 (define-read-only (is-loan-overdue (loan-id uint))
   (let
     (
-      (loan (unwrap! (get-loan loan-id) (err err-not-found)))
+      (loan (unwrap! (get-loan loan-id) err-not-found))
     )
     (ok (> stacks-block-height (get due-block loan)))
   )
@@ -102,68 +86,43 @@
 
 ;; Public functions
 
-;; Create a loan offer
-(define-public (create-loan-offer (amount uint) (interest-rate uint) (duration uint) 
-                                   (min-collateral-ratio uint) (min-reputation uint))
+;; Create a direct peer-to-peer loan
+(define-public (create-loan (borrower principal) (amount uint) (collateral-amount uint)
+                            (interest-rate uint) (duration uint) (min-collateral-ratio uint))
   (let
     (
-      (offer-id (var-get offer-nonce))
-    )
-    ;; Lock funds in contract (lender deposits)
-    (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
-    (map-set loan-offers
-      { offer-id: offer-id }
-      {
-        lender: tx-sender,
-        amount: amount,
-        interest-rate: interest-rate,
-        duration: duration,
-        min-collateral-ratio: min-collateral-ratio,
-        min-reputation: min-reputation,
-        active: true
-      }
-    )
-    (var-set offer-nonce (+ offer-id u1))
-    (ok offer-id)
-  )
-)
-
-;; Accept a loan offer
-(define-public (accept-loan-offer (offer-id uint) (collateral-amount uint))
-  (let
-    (
-      (offer (unwrap! (get-loan-offer offer-id) err-not-found))
       (loan-id (var-get loan-nonce))
-      (lender (get lender offer))
-      (amount (get amount offer))
       (collateral-ratio (if (> collateral-amount u0)
                            (/ (* collateral-amount u100) amount)
                            u0))
     )
-    (asserts! (get active offer) err-not-found)
-    (asserts! (>= collateral-ratio (get min-collateral-ratio offer)) err-insufficient-collateral)
+    (asserts! (> amount u0) err-invalid-amount)
+    (asserts! (>= collateral-ratio min-collateral-ratio) err-insufficient-collateral)
     
-    ;; Transfer collateral to contract escrow
+    ;; Transfer loan from lender to borrower
+    (try! (stx-transfer? amount tx-sender borrower))
+    
+    ;; Transfer collateral from borrower to lender (held as collateral)
     (if (> collateral-amount u0)
-      (try! (stx-transfer? collateral-amount tx-sender (as-contract tx-sender)))
+      (try! (stx-transfer? collateral-amount borrower tx-sender))
       true
     )
     
-    ;; Transfer loan amount from contract to borrower
-    (try! (stx-transfer? amount lender tx-sender))
+    ;; Store collateral info
+    (map-set collateral-vault { loan-id: loan-id } { amount: collateral-amount })
     
     ;; Create loan record
     (map-set loans
       { loan-id: loan-id }
       {
-        borrower: tx-sender,
-        lender: lender,
+        borrower: borrower,
+        lender: tx-sender,
         amount: amount,
         collateral: collateral-amount,
-        interest-rate: (get interest-rate offer),
-        duration: (get duration offer),
+        interest-rate: interest-rate,
+        duration: duration,
         start-block: stacks-block-height,
-        due-block: (+ stacks-block-height (get duration offer)),
+        due-block: (+ stacks-block-height duration),
         repaid-amount: u0,
         status: "active",
         collateral-ratio: collateral-ratio
@@ -171,11 +130,8 @@
     )
     
     ;; Update user stats
-    (update-user-stats-borrow tx-sender amount)
-    (update-user-stats-lend lender amount)
-    
-    ;; Deactivate offer
-    (map-set loan-offers { offer-id: offer-id } (merge offer { active: false }))
+    (update-user-stats-borrow borrower amount)
+    (update-user-stats-lend tx-sender amount)
     
     (var-set loan-nonce (+ loan-id u1))
     (ok loan-id)
@@ -191,27 +147,30 @@
       (lender (get lender loan))
       (total-repayment (unwrap! (calculate-repayment-amount loan-id) err-not-found))
       (new-repaid (+ (get repaid-amount loan) amount))
+      (collateral-amt (get collateral loan))
     )
     (asserts! (is-eq tx-sender borrower) err-unauthorized)
     (asserts! (is-eq (get status loan) "active") err-loan-not-active)
     (asserts! (> amount u0) err-invalid-amount)
     
-    ;; Transfer repayment
+    ;; Transfer repayment to lender
     (try! (stx-transfer? amount tx-sender lender))
     
-    ;; Update loan
+    ;; Check if fully repaid
     (if (>= new-repaid total-repayment)
       (begin
-        ;; Loan fully repaid
+        ;; Loan fully repaid - return collateral
         (map-set loans { loan-id: loan-id } (merge loan { 
           repaid-amount: new-repaid,
           status: "repaid"
         }))
-        ;; Return collateral from contract to borrower
-        (if (> (get collateral loan) u0)
-          (try! (stx-transfer? (get collateral loan) (as-contract tx-sender) borrower))
+        
+        ;; Return collateral from lender to borrower
+        (if (> collateral-amt u0)
+          (try! (stx-transfer? collateral-amt lender borrower))
           true
         )
+        
         ;; Update stats
         (update-user-stats-repay borrower (get amount loan))
         (update-user-stats-lend-complete lender)
@@ -235,13 +194,7 @@
     (asserts! (is-eq (get status loan) "active") err-loan-not-active)
     (asserts! (unwrap! (is-loan-overdue loan-id) err-not-found) err-loan-active)
     
-    ;; Transfer collateral from contract to lender
-    (if (> (get collateral loan) u0)
-      (try! (stx-transfer? (get collateral loan) (as-contract tx-sender) lender))
-      true
-    )
-    
-    ;; Update loan status
+    ;; Update loan status (collateral already with lender)
     (map-set loans { loan-id: loan-id } (merge loan { status: "liquidated" }))
     
     ;; Update borrower stats (add default)
