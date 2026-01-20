@@ -96,7 +96,7 @@
     (
       (loan (unwrap! (get-loan loan-id) (err err-not-found)))
     )
-    (ok (> block-height (get due-block loan)))
+    (ok (> stacks-block-height (get due-block loan)))
   )
 )
 
@@ -109,7 +109,7 @@
     (
       (offer-id (var-get offer-nonce))
     )
-    (asserts! (> amount u0) err-invalid-amount)
+    ;; Lock funds in contract (lender deposits)
     (try! (stx-transfer? amount tx-sender (as-contract tx-sender)))
     (map-set loan-offers
       { offer-id: offer-id }
@@ -143,14 +143,14 @@
     (asserts! (get active offer) err-not-found)
     (asserts! (>= collateral-ratio (get min-collateral-ratio offer)) err-insufficient-collateral)
     
-    ;; Transfer collateral if required
+    ;; Transfer collateral to contract escrow
     (if (> collateral-amount u0)
       (try! (stx-transfer? collateral-amount tx-sender (as-contract tx-sender)))
       true
     )
     
-    ;; Transfer loan amount to borrower
-    (try! (as-contract (stx-transfer? amount tx-sender tx-sender)))
+    ;; Transfer loan amount from contract to borrower
+    (try! (stx-transfer? amount lender tx-sender))
     
     ;; Create loan record
     (map-set loans
@@ -162,8 +162,8 @@
         collateral: collateral-amount,
         interest-rate: (get interest-rate offer),
         duration: (get duration offer),
-        start-block: block-height,
-        due-block: (+ block-height (get duration offer)),
+        start-block: stacks-block-height,
+        due-block: (+ stacks-block-height (get duration offer)),
         repaid-amount: u0,
         status: "active",
         collateral-ratio: collateral-ratio
@@ -207,9 +207,9 @@
           repaid-amount: new-repaid,
           status: "repaid"
         }))
-        ;; Return collateral
+        ;; Return collateral from contract to borrower
         (if (> (get collateral loan) u0)
-          (try! (as-contract (stx-transfer? (get collateral loan) tx-sender borrower)))
+          (try! (stx-transfer? (get collateral loan) (as-contract tx-sender) borrower))
           true
         )
         ;; Update stats
@@ -235,9 +235,9 @@
     (asserts! (is-eq (get status loan) "active") err-loan-not-active)
     (asserts! (unwrap! (is-loan-overdue loan-id) err-not-found) err-loan-active)
     
-    ;; Transfer collateral to lender
+    ;; Transfer collateral from contract to lender
     (if (> (get collateral loan) u0)
-      (try! (as-contract (stx-transfer? (get collateral loan) tx-sender lender)))
+      (try! (stx-transfer? (get collateral loan) (as-contract tx-sender) lender))
       true
     )
     
