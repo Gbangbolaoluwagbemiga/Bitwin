@@ -106,7 +106,7 @@
   )
 )
 
-;; Create loan with NFT collateral
+;;  Create loan with NFT collateral
 (define-public (create-nft-loan
   (nft-contract <nft-trait>)
   (nft-id uint)
@@ -125,8 +125,8 @@
     (asserts! (<= loan-amount max-loan) err-insufficient-value)
     (asserts! (not (is-nft-locked nft-contract-principal nft-id)) err-nft-locked)
     
-    ;; Transfer NFT to contract
-    (try! (contract-call? nft-contract transfer nft-id tx-sender (as-contract tx-sender)))
+    ;; Transfer NFT to lender as collateral
+    (try! (contract-call? nft-contract transfer nft-id tx-sender lender))
     
     ;; Lock NFT
     (map-set locked-nfts
@@ -178,11 +178,11 @@
     ;; Transfer repayment to lender
     (try! (stx-transfer? total-repayment tx-sender (get lender loan)))
     
-    ;; Return NFT to borrower
-    (try! (as-contract (contract-call? nft-contract transfer 
+    ;; Lender returns NFT to borrower
+    (try! (contract-call? nft-contract transfer 
                         (get nft-id loan) 
-                        tx-sender 
-                        (get borrower loan))))
+                        (get lender loan)
+                        (get borrower loan)))
     
     ;; Unlock NFT
     (map-set locked-nfts
@@ -201,7 +201,7 @@
 )
 
 ;; Liquidate undercollateralized NFT loan
-(define-public (liquidate-nft-loan (loan-id uint) (nft-contract <nft-trait>))
+(define-public (liquidate-nft-loan (loan-id uint))
   (let
     (
       (loan (unwrap! (get-nft-loan loan-id) err-not-found))
@@ -211,12 +211,7 @@
     (asserts! (not (get repaid loan)) err-not-found)
     (asserts! (not (get liquidated loan)) err-not-found)
     
-    ;; Transfer NFT to lender
-    (try! (as-contract (contract-call? nft-contract transfer 
-                        (get nft-id loan) 
-                        tx-sender 
-                        (get lender loan))))
-    
+    ;; NFT already with lender, just mark as liquidated
     ;; Unlock NFT
     (map-set locked-nfts
       { nft-contract: (get nft-contract loan), nft-id: (get nft-id loan) }
