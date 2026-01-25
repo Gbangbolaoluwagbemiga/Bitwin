@@ -1,9 +1,11 @@
 
 import Link from 'next/link';
-import { LayoutDashboard, Zap, Droplets, Image as ImageIcon, Users, Shield } from 'lucide-react';
+import { LayoutDashboard, Zap, Droplets, Image as ImageIcon, Users, Shield, Award, DollarSign } from 'lucide-react';
 
 const NAV_ITEMS = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'My Loans', href: '/loans', icon: DollarSign },
+    { name: 'Reputation', href: '/reputation', icon: Award },
     { name: 'Flash Loans', href: '/flash-loans', icon: Zap },
     { name: 'Liquidity Pools', href: '/pools', icon: Droplets },
     { name: 'NFT Verification', href: '/nft', icon: ImageIcon },
