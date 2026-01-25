@@ -1,7 +1,7 @@
 
-import { StacksMainnet } from '@stacks/network';
+import { STACKS_MAINNET } from '@stacks/network';
 
-export const NETWORK = new StacksMainnet();
+export const NETWORK = STACKS_MAINNET;
 export const DEPLOYER_ADDRESS = 'SP2QNSNKR3NRDWNTX0Q7R4T8WGBJ8RE8RA516AKZP';
 
 export const CONTRACTS = {
