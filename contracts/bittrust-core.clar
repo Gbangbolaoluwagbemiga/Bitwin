@@ -132,7 +132,7 @@
     ;; Update user stats
     (update-user-stats-borrow borrower amount)
     (update-user-stats-lend tx-sender amount)
-    
+    (emit-loan-created loan-id borrower tx-sender amount collateral-amount interest-rate duration)
     (var-set loan-nonce (+ loan-id u1))
     (ok loan-id)
   )
@@ -281,5 +281,31 @@
         active-loans-as-lender: (- (get active-loans-as-lender stats) u1)
       })
     )
+  )
+)
+
+;; Event for loan creation
+(define-private (emit-loan-created
+    (loan-id uint)
+    (borrower principal)
+    (lender principal)
+    (amount uint)
+    (collateral-amount uint)
+    (interest-rate uint)
+    (duration uint)
+  )
+  (print
+    { 
+      event: "loan-created",
+      loan-id: loan-id,
+      borrower: borrower,
+      lender: lender,
+      amount: amount,
+      collateral: collateral-amount,
+      interest-rate: interest-rate,
+      duration: duration,
+      due-block: (+ stacks-block-height duration),
+      timestamp: stacks-block-height
+    }
   )
 )
