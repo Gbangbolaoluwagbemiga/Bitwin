@@ -5,31 +5,31 @@ authors = []
 telemetry = false
 cache_dir = "./.cache"
 
-[contracts.bittrust-core]
+[contracts.bittrust-core-v2]
 path = "contracts/bittrust-core.clar"
 epoch = "latest"
 
-[contracts.reputation-system]
+[contracts.reputation-system-v2]
 path = "contracts/reputation-system.clar"
 epoch = "latest"
 
-[contracts.governance]
+[contracts.governance-v2]
 path = "contracts/governance.clar"
 epoch = "latest"
 
-[contracts.flash-loans]
+[contracts.flash-loans-v2]
 path = "contracts/flash-loans.clar"
 epoch = "latest"
 
-[contracts.liquidity-pool]
+[contracts.liquidity-pool-v2]
 path = "contracts/liquidity-pool.clar"
 epoch = "latest"
 
-[contracts.nft-collateral]
+[contracts.nft-collateral-v2]
 path = "contracts/nft-collateral.clar"
 epoch = "latest"
 
-[contracts.credit-delegation]
+[contracts.credit-delegation-v2]
 path = "contracts/credit-delegation.clar"
 epoch = "latest"
 
