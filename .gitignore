@@ -8,6 +8,8 @@
 .env.production
 .env.development
 *.env
+!.env.example
+!**/.env.example
 
 # Deployment configurations with mnemonics
 **/settings/Mainnet.toml
