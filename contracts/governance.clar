@@ -9,6 +9,7 @@
 (define-constant err-already-voted (err u303))
 (define-constant err-proposal-not-active (err u304))
 (define-constant err-proposal-not-passed (err u305))
+(define-constant err-invalid-input (err u306))
 
 ;; Data Variables
 (define-data-var proposal-nonce uint u0)
@@ -98,6 +99,9 @@
       (proposal-id (var-get proposal-nonce))
       (voting-duration (var-get voting-period))
     )
+    (asserts! (> (len title) u0) err-invalid-input)
+    (asserts! (> (len description) u0) err-invalid-input)
+    (asserts! (> (len parameter) u0) err-invalid-input)
     (map-set proposals
       { proposal-id: proposal-id }
       {

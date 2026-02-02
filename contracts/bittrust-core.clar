@@ -97,6 +97,9 @@
                            u0))
     )
     (asserts! (> amount u0) err-invalid-amount)
+    (asserts! (not (is-eq borrower tx-sender)) err-invalid-amount)
+    (asserts! (<= interest-rate u10000) err-invalid-amount) ;; Max 100%
+    (asserts! (> duration u0) err-invalid-amount)
     (asserts! (>= collateral-ratio min-collateral-ratio) err-insufficient-collateral)
     
     ;; Transfer loan from lender to borrower

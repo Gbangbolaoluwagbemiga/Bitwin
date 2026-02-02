@@ -113,6 +113,7 @@
       (new-total-loans (+ (get total-loans reputation) u1))
       (new-total-volume (+ (get total-volume reputation) amount))
     )
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
     (map-set reputation-scores
       { user: user }
       (merge reputation {
@@ -148,6 +149,7 @@
       (score-increase (if on-time u20 u10))
       (new-score (min max-reputation (+ current-score score-increase)))
     )
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
     (map-set reputation-scores
       { user: user }
       (merge reputation {
@@ -184,6 +186,7 @@
                     (- current-score score-decrease)
                     u0))
     )
+    (asserts! (is-eq tx-sender contract-owner) err-owner-only)
     (map-set reputation-scores
       { user: user }
       (merge reputation {
