@@ -14,7 +14,7 @@
 - **Peer-to-Peer Loans**: Direct lending without intermediaries
 - **Automated Interest Calculation**: Fair, transparent pricing
 - **Smart Liquidation**: Automated collateral management
-- **Real-time Updates**: Live loan status tracking
+- **Real-time Updates**: Live loan status tracking.
 
 ### 📊 Reputation System
 - **Dynamic Credit Scoring**: 0-1000 scale with transparent algorithm
