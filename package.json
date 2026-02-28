@@ -7,7 +7,9 @@
   "scripts": {
     "test": "vitest run",
     "test:report": "vitest run -- --coverage --costs",
-    "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\""
+    "test:watch": "chokidar \"tests/**/*.ts\" \"contracts/**/*.clar\" -c \"npm run test:report\"",
+    "deploy:batch": "node scripts/deploy_batch_simple.js",
+    "deploy:100": "CONTRACT_COUNT=100 TOTAL_FEE_BUDGET_USTX=500000 DEPLOY_INTERVAL_MINUTES=2 CONTRACT_TEMPLATE=minimal VERIFY_TIMEOUT_MINUTES=30 node scripts/deploy_batch_simple.js"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +18,7 @@
     "@stacks/network": "^7.3.1",
     "@stacks/transactions": "^7.2.0",
     "@stacks/wallet-sdk": "^7.2.0",
+    "node-fetch": "^3.3.2",
     "@types/node": "^24.4.0",
     "chokidar-cli": "^3.0.0",
     "dotenv": "^17.2.3",

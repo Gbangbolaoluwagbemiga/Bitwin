@@ -1,6 +1,17 @@
 # ============================================
 # CRITICAL: Private Keys & Secrets
 # ============================================
+
+# ============================================
+# Deployment & Activity Scripts (contain or
+# reference private keys — keep local only)
+# ============================================
+scripts/random_activity.js
+scripts/random_interact.js
+scripts/deploy_batch_simple.js
+scripts/deploy-mainnet.sh
+scripts/*.sh
+
 # Environment files with private keys/mnemonics
 .env
 .env.local
@@ -11,11 +22,15 @@
 !.env.example
 !**/.env.example
 
-# Deployment configurations with mnemonics
+# Deployment configurations with mnemonics (mainnet, testnet, devnet all contain secrets)
 **/settings/Mainnet.toml
 **/settings/Testnet.toml
+**/settings/Devnet.toml
 settings/Mainnet.toml
 settings/Testnet.toml
+settings/Devnet.toml
+# Catch-all for any future settings files with keys
+settings/*.toml
 
 # Private key files
 *.pem
