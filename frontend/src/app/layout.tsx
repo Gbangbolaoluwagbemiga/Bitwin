@@ -9,6 +9,11 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'BitTrust - Advanced Lending on Stacks',
   description: 'Reputation-based lending with flash loans, pools, and NFT collateral',
+  icons: {
+    icon: '/favicon.png',
+    shortcut: '/favicon.png',
+    apple: '/favicon.png',
+  },
   other: {
     'talentapp:project_verification':
       '5391938232059c01879967bb9aa892aff42adef3b16bb68f7b8d2e5111ad498d8d290125fa96359bcc6dd9b1b598f345bc7a5de2b22b45fb4af53d8a61e3550d',
